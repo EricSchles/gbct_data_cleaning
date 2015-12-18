@@ -17,4 +17,4 @@ login_manager.init_app(app)
 login_manager.anonymous_user = Anonymous
 db = SQLAlchemy(app)
 
-from app import views, models
+from app import views, models, api
