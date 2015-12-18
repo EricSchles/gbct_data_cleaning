@@ -4,8 +4,6 @@ from app import app
 from app.models import *
 from datetime import datetime
 import json
-import scipy as sp
-from scipy import stats
 import math
 from app import flask_login,login_manager
 import bcrypt
