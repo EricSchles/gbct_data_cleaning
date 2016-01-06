@@ -77,10 +77,8 @@ def download_files():
                                 filename="data.csv"))
     else:
         return redirect(
-            url_for("ingestion_engine.html",
-                    files_are_missing="files are missing",
-                    missing_files=get_missing_files()
-            ))
+            url_for("ingestion_engine")
+        )
                         
                         
 @app.route('/uploads/<filename>')
