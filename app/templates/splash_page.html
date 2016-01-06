@@ -51,7 +51,8 @@
   </div><!-- /.container-fluid -->
 </nav>    
 
-<h1 style="text-align:center">Welcome to Gi Bill Comparison Tool Ingestion Engine!</h1>
+
+<h1 style="text-align:center;padding:1em 0 0 0;">Welcome to Gi Bill Comparison Tool Ingestion Engine!</h1>
 
 {% if current_user.is_authenticated %}
 <div style="text-align:center; padding:4em;font-size:x-large">
@@ -59,7 +60,7 @@
   <p><a href="{{ url_for('ingestion_engine')}}">Get it cleaned here</a></p>
 </div>
 {% else %}
-<div style="text-align:left; padding:10em;font-size:large">
+<div style="text-align:center; margin:2em auto 0;font-size:large">
    <p>Using this tool you can ingest data for from around the VA to be loaded into the Gi Bill Comparison Tool</p>
    <p>Just sign in and you'll have access to a simple ingestion engine, via uploading a file.</p>
 </div>

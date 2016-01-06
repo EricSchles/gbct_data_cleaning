@@ -8,14 +8,55 @@ import math
 from app import flask_login,login_manager
 import bcrypt
 import os
+from app.validation import *
 from werkzeug import secure_filename
+from logger import *
 
+####################################
+# Splash Page and General Resources
+####################################
 
-ALLOWED_EXTENSIONS = ALLOWED_EXTENSIONS = set(['csv'])
+@app.route("/splash_page",methods=["GET","POST"])
+@app.route("/",methods=["GET","POST"])
+def splash_page():
+    return render_template("splash_page.html",current_user=current_user)
+
+######################
+#upload files section
+######################
+
+ALLOWED_EXTENSIONS = ALLOWED_EXTENSIONS = set(['csv','xlsx','xls'])
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+@app.route("/ingestion_engine",methods=["GET","POST"])
+@flask_login.login_required
+def ingestion_engine():
+    if request.method == 'POST':
+        file = request.files['file']
+        errors = []
+        if file and allowed_file(file.filename):
+            filename = file.filename #was using secure_filename but this isn't standard naming convention and I have no good solution at present
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            local_file = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            error = perform_checks(filename,local_file)
+            if error == "no error":
+                return redirect(url_for('uploaded_file',
+                                        filename="data.csv"))
+            else:
+                return render_template("ingestion_engine.html",error=error)
+    return render_template("ingestion_engine.html")
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'],
+                               filename)
+
+######################
+# Login section
+######################
 
 @login_manager.user_loader
 def user_loader(email):
@@ -39,11 +80,8 @@ def request_loader(request):
             return user
     return
 
-
 def check_password(email,password):
     user_pw = str(Users.query.filter_by(email=email).first().password)
-    print user_pw
-    print password
     if bcrypt.hashpw(password,user_pw) == user_pw:
         return True
     else:
@@ -63,34 +101,30 @@ def login():
         
         return redirect(url_for("splash_page"))
     return render_template("login.html",error="username or password was incorrect, please try again")
-    
-@app.route("/splash_page",methods=["GET","POST"])
-@app.route("/",methods=["GET","POST"])
-def splash_page():
-    return render_template("splash_page.html",current_user=current_user)
-
-
-@app.route("/ingestion_engine",methods=["GET","POST"])
-@flask_login.login_required
-def ingestion_engine():
-    if request.method == 'POST':
-        file = request.files['file']
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return redirect(url_for('uploaded_file',
-                                    filename=filename))
-    return render_template("ingestion_engine.html")
-
-
-
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'],
-                               filename)
 
 @app.route("/logout")
 @flask_login.login_required
 def logout():
     logout_user()
     return redirect(url_for("splash_page"))
+
+######################
+# Logging section
+######################
+
+@app.route("/logs",methods=["GET","POST"])
+@flask_login.login_required
+def logs_console():
+    if current_user.id == "admin":
+        #To Do:
+        #Make this more granular allow for querying by log type
+        #All for querying by time stamp
+        return render_template("logs_console.html",logs=Logs.query.all())
+    else:
+        return """
+        <!doctype html>
+        <head></head>
+        <body>
+        <p> You are not an admin user, only admin's may see this page</p>
+        </html>
+        """

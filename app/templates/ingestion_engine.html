@@ -53,12 +53,32 @@
   </div><!-- /.container-fluid -->
 </nav>    
 
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+{% if error %}
+    <p class=error><strong>Error:</strong> {{ error }}
+{% endif %}
+
+{% if files_are_missing %}
+  {% for file in missing_files %}
+    <p class=error><strong>The following file is missing and needed:</strong> {{file}}
+  {% endfor %}
+{% endif %}
+
 <form action="" method=post enctype=multipart/form-data class="form-horizontal">
   <div class="form-group">
     
-    <label for="FileUpload">File input</label>
+    <label style="font-size:x-large;margin:auto 0 1em 0;" for="FileUpload">File input</label>
     <input type="file" name=file id="FileUpload">
-    <p class="help-block">Example block-level help text here.</p>
+    <p style="margin: 1em auto auto 0;"class="help-block">Example block-level help text here.</p>
   </div>
   <button type="submit" class="btn btn-default">Submit</button>
 </form>
