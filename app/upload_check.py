@@ -10,7 +10,11 @@ import os
 
 #To do: remove data.csv
 
-def remove_bad_files():
+def remove_files_with_errors(files):
+    for name,loc,error in files:
+        os.remove(loc)
+    
+def remove_unnecessary_files():
     upload_folder = app.config["UPLOAD_FOLDER"]
     current_files = glob(upload_folder+"/*")
     current_files_names = [f.split("/")[-1] for f in current_files] 

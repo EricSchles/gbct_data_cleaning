@@ -32,26 +32,32 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
+#allow multiple file upload
+#http://code.runnable.com/UiPeYmdVjZlYAAAf/how-to-upload-multiple-files-in-flask-for-python
 @app.route("/ingestion_engine",methods=["GET","POST"])
 @flask_login.login_required
 def ingestion_engine():
-    remove_bad_files()
+    remove_unnecessary_files()
     if request.method == 'POST':
-        file = request.files['file']
-        errors = []
-        if file and allowed_file(file.filename):
-            filename = file.filename #was using secure_filename but this isn't standard naming convention and I have no good solution at present
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            local_file = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-            error = perform_checks(filename,local_file)
-            if not check_for_all_files():
-                return render_template("ingestion_engine.html",error=error,
-                                       files_are_missing="files are missing",
-                                       missing_files=get_missing_files())
-            else:
-                return render_template("ingestion_engine.html",
-                                       files_are_missing=None,
-                                       missing_files=get_missing_files())
+        files = request.files.getlist('file[]')
+        errors = [] #(filename,loc,error) per entry
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = file.filename #was using secure_filename but this isn't standard naming convention and I have no good solution at present
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                local_file = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                error = perform_checks(filename,local_file)
+                if error != "no error":
+                    errors.append((filename,local_file,error))
+        remove_files_with_errors(errors)
+        if not check_for_all_files():
+            return render_template("ingestion_engine.html",errors=errors, #make this iterable in template
+                                   files_are_missing="files are missing",
+                                   missing_files=get_missing_files())
+        else:
+            return render_template("ingestion_engine.html",
+                                   files_are_missing=None,
+                                   missing_files=get_missing_files())
         
     if not check_for_all_files():
         return render_template("ingestion_engine.html",
