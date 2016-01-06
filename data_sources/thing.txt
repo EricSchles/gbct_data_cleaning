@@ -1,8 +1,0 @@
-'ID',
-'School',
-'City',
-'State',
-'IPEDs Code',
-'Website',
-'IPEDS_6',
-'SVA_Yes',

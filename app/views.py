@@ -11,6 +11,7 @@ import os
 from app.validation import *
 from werkzeug import secure_filename
 from logger import *
+from upload_check import *
 
 ####################################
 # Splash Page and General Resources
@@ -34,6 +35,7 @@ def allowed_file(filename):
 @app.route("/ingestion_engine",methods=["GET","POST"])
 @flask_login.login_required
 def ingestion_engine():
+    remove_bad_files()
     if request.method == 'POST':
         file = request.files['file']
         errors = []
@@ -42,13 +44,39 @@ def ingestion_engine():
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             local_file = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             error = perform_checks(filename,local_file)
-            if error == "no error":
-                return redirect(url_for('uploaded_file',
-                                        filename="data.csv"))
+            if not check_for_all_files():
+                return render_template("ingestion_engine.html",error=error,
+                                       files_are_missing="files are missing",
+                                       missing_files=get_missing_files())
             else:
-                return render_template("ingestion_engine.html",error=error)
-    return render_template("ingestion_engine.html")
+                return render_template("ingestion_engine.html",
+                                       files_are_missing=None,
+                                       missing_files=get_missing_files())
+        
+    if not check_for_all_files():
+        return render_template("ingestion_engine.html",
+                               files_are_missing="files are missing",
+                               missing_files=get_missing_files())
+    else:
+        return render_template("ingestion_engine.html",
+                               files_are_missing=None,
+                               missing_files=get_missing_files())
 
+                               
+@app.route("/download_file",methods=["GET","POST"])
+@flask_login.login_required
+def download_files():
+    if check_for_all_files():
+        return redirect(url_for('uploaded_file',
+                                filename="data.csv"))
+    else:
+        return redirect(
+            url_for("ingestion_engine.html",
+                    files_are_missing="files are missing",
+                    missing_files=get_missing_files()
+            ))
+                        
+                        
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],
